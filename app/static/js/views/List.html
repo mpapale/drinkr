@@ -1,0 +1,16 @@
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title"><%- this.title %></h3>
+    </div>
+    <div class="panel-body">
+        <% if (items.models.length === 0) { %>
+            No items here, yo
+        <% } else { %>
+        <ul class="list-group">
+        <% items.each(function(item) { %>
+            <li class="list-group-item"><%- item.get('name') || item.get('_id') %></li>
+        <% }) %>
+        </ul>
+        <% } %>
+    </div>
+</div>

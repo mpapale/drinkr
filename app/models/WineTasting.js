@@ -28,11 +28,13 @@ var foodPairingMatches = ['','perfect','good','neutral','bad'];
 
 
 var WineTastingSchema = new Schema({
-	taster: User,
+	taster: { type: String, ref: 'User' },
+	wine: { type: String, ref: 'Wine' },
+
 	date: { type: Date, default: Date.now },
 	location: String,
-	// Number = user ids
-	tastingPartners: [Number],
+	tastingPartners: [{ type: String, ref: 'User' }],
+	picture: { type: String, default: '' },
 	
 	color: { type: String, enum: colors },
 	colorDepth: { type: String, enum: colorDepths },
@@ -56,9 +58,12 @@ var WineTastingSchema = new Schema({
 
 	conclusion: String,
 	style: { type: String, enum: styles },
-	rating: Number,
+	rating: { type: Number, min: 0, max: 5},
 
-	foodPairingMatch: { type: String enum: foodPairingMatches }
+	food: { type: String, default: ''},
+	foodPairingMatch: { type: String, enum: foodPairingMatches, default: '' },
+
+	notes: { type: String, default: '' } 
 });
 
 module.exports = mongoose.model('WineTasting', WineTastingSchema);

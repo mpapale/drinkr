@@ -216,3 +216,5 @@ pip-log.txt
 
 #NPM
 node_modules/
+
+app/static/bower_components

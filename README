@@ -1,0 +1,8 @@
+1. Get Mongodb.
+2. Run Mongodb:
+    mongod --dbpath path/to/something
+3. Edit mongod connection string in server.js
+4. Run npm install
+5. cd to app/static and run bower install. (ensure you have already run npm install -d bower)
+6. Run server:
+    node server.js
