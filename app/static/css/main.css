@@ -1,0 +1,12 @@
+header .page-header {
+    border-bottom: none;
+}
+.drinkr-logo {
+    height: 40px;
+    width: 50px;
+}
+.drinkr-r {
+    display: inline-block;
+    transform: rotate(30deg);
+    margin-left: 2px;
+}

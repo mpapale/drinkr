@@ -16,6 +16,7 @@ define(
                 this.collection = this.collection || {};
                 this.model = this.model || {};
                 this.children = options.children || {};
+                this.router = options.router || {};
 
                 if (this.template) {
                     this.compiledTemplate = _.template(this.template);

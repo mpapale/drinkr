@@ -8,8 +8,12 @@ define(
         'collections/Wines',
         'collections/WineTastings',
         'views/Base',
-        'views/List',
-        'text!views/App.html'
+        'views/collection/Master',
+        'views/admin/Master',
+        'views/tastings/Master',
+        'views/home/Master',
+        'routers/App',
+        'text!./App.html'
     ],
     function(
         $,
@@ -20,7 +24,11 @@ define(
         WinesCollection,
         WineTastingsCollection,
         BaseView,
-        ListView,
+        CollectionView,
+        AdminView,
+        TastingsView,
+        HomeView,
+        AppRouter,
         Template
     ) {
         return BaseView.extend({
@@ -32,35 +40,72 @@ define(
                 this.collection.wineTastings = new WineTastingsCollection();
                 this.collection.users = new UsersCollection();
 
-                this.children.inventoriesList = new ListView({
-                    collection: this.collection.inventories,
-                    title: 'Inventories'
-                });
-                this.children.winesList = new ListView({
-                    collection: this.collection.wines,
-                    title: 'Wines'
-                });
-                this.children.tastingsList = new ListView({
-                    collection: this.collection.wineTastings,
-                    title: 'Wine Tastings'
-                });
-                this.children.usersList = new ListView({
-                    collection: this.collection.users,
-                    title: 'Users'
-                });
+                this.router = new AppRouter();
 
+                this.children.collection = new CollectionView();
+                this.children.admin = new AdminView({
+                    collection: {
+                        inventories: this.collection.inventories,
+                        wines: this.collection.wines,
+                        wineTastings: this.collection.wineTastings,
+                        users: this.collection.users
+                    }
+                });
+                this.children.tastings = new TastingsView();
+                this.children.home = new HomeView();
+
+                this.setupRoutes();
+                this.fetchCollections();
+            },
+            render: function() {
+                this.$el.html(this.template);
+                
+                debugger;
+                this.highlightNavLinks(Backbone.history.fragment);
+
+                this.children.admin.render().$el.appendTo(this.$('.drinkr-app-content'));
+                this.children.tastings.render().$el.appendTo(this.$('.drinkr-app-content'));
+                this.children.home.render().$el.appendTo(this.$('.drinkr-app-content'));
+                this.children.collection.render().$el.appendTo(this.$('.drinkr-app-content'));
+                return this;
+            },
+            fetchCollections: function() {
                 this.collection.inventories.fetch();
                 this.collection.wines.fetch();
                 this.collection.wineTastings.fetch();
                 this.collection.users.fetch();
             },
-            render: function() {
-                this.$el.html(this.template);
-                this.$el.append(this.children.inventoriesList.render().$el);
-                this.$el.append(this.children.winesList.render().$el);
-                this.$el.append(this.children.tastingsList.render().$el);
-                this.$el.append(this.children.usersList.render().$el);
-                return this;
+            clearNavState: function() {
+                _.each(_.keys(this.children), function(childKey) {
+                    this.children[childKey].$el.hide();
+                }, this);
+            },
+            setupRoutes: function() {
+                this.router.on('route', this.highlightNavLinks, this);
+                this.router.on('route:collection', function() {
+                    this.clearNavState();
+                    this.children.collection.$el.show();
+                }, this);
+                this.router.on('route:admin', function() {
+                    this.clearNavState();
+                    this.children.admin.$el.show();
+                }, this);
+                this.router.on('route:tastings', function() {
+                    this.clearNavState();
+                    this.children.tastings.$el.show();
+                }, this);
+                this.router.on('route:home', function() {
+                    this.clearNavState();
+                    this.children.home.$el.show();
+                }, this);
+
+                Backbone.history.start();
+            },
+            highlightNavLinks: function(route) {
+                this.$('.drinkr-app-nav li').removeClass('active');
+                this.$('.drinkr-app-nav a[href="#' + route + '"]')
+                    .parent()
+                    .addClass('active');
             },
             template: Template
         });

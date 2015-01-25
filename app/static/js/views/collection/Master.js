@@ -4,7 +4,7 @@ define(
         'underscore',
         'backbone',
         'views/Base',
-        'text!views/List.html'
+        'text!./Master.html'
     ],
     function(
         $,
@@ -14,18 +14,11 @@ define(
         Template
     ) {
         return BaseView.extend({
-            className: 'col-md-3',
-            initialize: function(options) {
+            initialize: function() {
                 BaseView.prototype.initialize.apply(this, arguments);
-                this.title = options.title || "List title";
-
-                this.listenTo(this.collection, 'add reset remove sync', this.render);
             },
             render: function() {
-                this.$el.html(this.compiledTemplate({
-                    title: this.title,
-                    items: this.collection
-                }));
+                this.$el.html(this.template);
                 return this;
             },
             template: Template
