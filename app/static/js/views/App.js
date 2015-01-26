@@ -42,7 +42,9 @@ define(
 
                 this.router = new AppRouter();
 
-                this.children.collection = new CollectionView();
+                this.children.collection = new CollectionView({
+                    collection: this.collection.inventories
+                });
                 this.children.admin = new AdminView({
                     collection: {
                         inventories: this.collection.inventories,
@@ -51,7 +53,9 @@ define(
                         users: this.collection.users
                     }
                 });
-                this.children.tastings = new TastingsView();
+                this.children.tastings = new TastingsView({
+                    collection: this.collection.wineTastings
+                });
                 this.children.home = new HomeView();
 
                 this.setupRoutes();
@@ -60,7 +64,6 @@ define(
             render: function() {
                 this.$el.html(this.template);
                 
-                debugger;
                 this.highlightNavLinks(Backbone.history.fragment);
 
                 this.children.admin.render().$el.appendTo(this.$('.drinkr-app-content'));

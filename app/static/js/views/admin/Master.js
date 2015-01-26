@@ -4,7 +4,7 @@ define(
         'underscore',
         'backbone',
         'views/Base',
-        'views/admin/List',
+        'views/shared/List',
         'text!./Master.html'
     ],
     function(

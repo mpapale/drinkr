@@ -1,6 +1,22 @@
-header .page-header {
-    border-bottom: none;
+.page-header {
+    padding-bottom: 18px;
+    margin-bottom: 11px;
 }
+
+.page-header h1 {
+    margin-top: 0;
+}
+
+.navbar a {
+    color: inherit;
+}
+.nav>li>a {
+    color: inherit;
+}
+.nav>li>a:hover, .nav>li>a:focus {
+    background-color: transparent;
+}
+
 .drinkr-logo {
     height: 40px;
     width: 50px;

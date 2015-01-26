@@ -85,7 +85,7 @@ var serializeWineTasting = function(wineTasting, req) {
 
 
 
-var makeRestRoutes = function(root, Model, serializer) {
+var makeRestRoutes = function(root, Model, serializer, populateField) {
 
 	// Wire up the entities
 	// The List endpoint
@@ -105,7 +105,11 @@ var makeRestRoutes = function(root, Model, serializer) {
 		})
 		//_R_ead
 		.get(function(req, res) {
-			Model.find(function(err, models) {
+			var models = Model.find();
+			if (populateField) {
+				models = models.populate(populateField);
+			}
+			models.exec(function(err, models) {
 				if (err) {
 					res.send(err);
 					res.status(500).end();
@@ -184,7 +188,7 @@ var makeRestRoutes = function(root, Model, serializer) {
 };
 
 makeRestRoutes('wines', WineModel, serializeWine);
-makeRestRoutes('inventories', InventoryModel, serializeInventory);
+makeRestRoutes('inventories', InventoryModel, serializeInventory, 'bottles.wine');
 makeRestRoutes('users', UserModel, serializeUser);
 makeRestRoutes('wine-tastings', WineTastingModel, serializeWineTasting);
 
