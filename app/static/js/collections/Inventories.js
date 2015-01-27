@@ -13,7 +13,7 @@ define(
     ) {
         return Backbone.Collection.extend({
             url: '/api/inventories',
-            model: InventoryModel            
+            model: InventoryModel
         });
     }
 );

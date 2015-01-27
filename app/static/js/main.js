@@ -5,7 +5,8 @@ require.config({
         'underscore': '/static/bower_components/underscore/underscore-min',
         'backbone': '/static/bower_components/backbone/backbone',
         'text': '/static/bower_components/requirejs-text/text',
-        'bootstrap': '/static/bower_components/bootstrap/dist/js/bootstrap.min'
+        'bootstrap': '/static/bower_components/bootstrap/dist/js/bootstrap.min',
+        'chartjs': '/static/bower_components/chartjs/Chart.min'
     },
     shim: {
         'bootstrap': {

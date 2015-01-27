@@ -6,3 +6,9 @@
 5. cd to app/static and run bower install. (ensure you have already run npm install -d bower)
 6. Run server:
     node server.js
+
+** requires $GOOGLE_API_KEY env var to be set
+
+Notes:
+Your server.js is getting a bit crufty: consider using backbone-relational, as well as 
+pushing the geocoding logic to the REST endpoint

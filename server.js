@@ -1,10 +1,14 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
+var request = require('request');
+var _ = require('underscore');
+
 var WineModel = require('./app/models/Wine');
 var InventoryModel = require('./app/models/Inventory');
 var UserModel = require('./app/models/User');
 var WineTastingModel = require('./app/models/WineTasting');
+var CacheModel = require('./app/models/Cache');
 
 
 // Configure bodyParser so we can get POST data...
@@ -16,10 +20,18 @@ app.use(bodyParser.json());
 // Set up mongo
 mongoose.connect('mongodb://localhost:27017');
 
+var UNKNOWN_COUNTRY = 'unknown';
+
 
 // Set up routes
 var restRouter = express.Router();
 var port = process.env.PORT || 8080;
+var googleApiKey = process.env.GOOGLE_API_KEY;
+
+if (_.isUndefined(googleApiKey)) {
+	console.error("GOOGLE_API_KEY environment variable must be defined");
+	process.exit();
+}
 
 // Catch-all logging function
 restRouter.use(function(req, res, next) {
@@ -85,7 +97,8 @@ var serializeWineTasting = function(wineTasting, req) {
 
 
 
-var makeRestRoutes = function(root, Model, serializer, populateField) {
+// TODO augmenter and populateFields should be enabled on entity GET as well
+var makeRestRoutes = function(root, Model, serializer, populateField, augmenter) {
 
 	// Wire up the entities
 	// The List endpoint
@@ -115,7 +128,16 @@ var makeRestRoutes = function(root, Model, serializer, populateField) {
 					res.status(500).end();
 				}
 
-				res.json(models);
+				if (augmenter) {
+					augmenter(models, function(err) {
+						if (err) {
+							res.status(500).send(err).end();
+						}
+						res.json(models);
+					});
+				} else {
+					res.json(models);
+				}
 			});
 		})
 		.put(function(req, res) {
@@ -177,7 +199,6 @@ var makeRestRoutes = function(root, Model, serializer, populateField) {
 				_id: req.params.id
 			}, function(err, model) {
 				if (validate(err, res, model)) {
-					console.log('model is ' + model)
 					res.json();
 				}
 			})
@@ -187,8 +208,89 @@ var makeRestRoutes = function(root, Model, serializer, populateField) {
 		});
 };
 
+var retrieveAddress = function(cache, address, cb) {
+	cache.cache = cache.cache || {};
+
+	// TODO expiry
+	if (_.has(cache.cache, address)) {
+		console.info('found ' + address + ' in cache.');
+		cb(null, cache.cache[address]);
+	} else {
+		request(
+			'https://maps.googleapis.com/maps/api/geocode/json?' + 
+			'key=' + googleApiKey + '&' + 
+			'address=' + encodeURIComponent(address),
+			function(err, response, body) {
+				if (err) {
+					cb(err, UNKNOWN_COUNTRY);
+					return
+				}
+				var respObject = JSON.parse(body),
+					value = UNKNOWN_COUNTRY,
+					results = respObject.results[0],
+					addressData = (results && results.address_components) || [],
+					countryData = _.find(addressData, function(datum) {
+						return _.contains(datum.types, 'country');
+					});
+
+				// Both OK and ZERO_RESULTS are cacheable
+				if (respObject.status !== "OK" && respObject.status !== 'ZERO_RESULTS') {
+					cb("Google API status = " + respObject.status, UNKNOWN_COUNTRY);
+					return;
+				}
+
+				if (countryData) {
+					value = countryData.long_name; 
+				}
+
+				cache.cache[address] = value;
+				cache.markModified('cache');
+
+				cb(null, value);
+			}
+		);
+	}
+};
+
 makeRestRoutes('wines', WineModel, serializeWine);
-makeRestRoutes('inventories', InventoryModel, serializeInventory, 'bottles.wine');
+makeRestRoutes(
+	'inventories', 
+	InventoryModel, 
+	serializeInventory, 
+	'bottles.wine',
+	function(inventoryModels, cb) {
+		var cacheName = "addressCache";
+		CacheModel.findOne({ 'name': cacheName }, 'cache', function(err, cache) {
+			if (err) {
+				cb(err);
+				return;
+			}
+			if (cache === null) {
+				cache = new CacheModel();
+				cache.name = cacheName;
+				cache.cache = {};
+			}
+
+			var bottles = _.flatten(_.pluck(inventoryModels, 'bottles'));
+			var countdown = bottles.length;
+
+			_.each(bottles, function(bottle) {
+				retrieveAddress(
+					cache,
+					bottle.wine.regionOrAppellation,
+					function(err, country) {
+						bottle.wine.country = country;
+
+						if (--countdown === 0) {
+							cache.save();
+							cb(null);
+						}
+					}
+				);
+			});
+		});
+	}
+);
 makeRestRoutes('users', UserModel, serializeUser);
 makeRestRoutes('wine-tastings', WineTastingModel, serializeWineTasting);
 

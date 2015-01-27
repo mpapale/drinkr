@@ -13,7 +13,7 @@ define(
     ) {
         return Backbone.Collection.extend({
             url: '/api/wines',
-            model: WineModel            
+            model: WineModel
         });
     }
 );
