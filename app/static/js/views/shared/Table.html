@@ -1,0 +1,22 @@
+
+<table class="table table-condensed table-striped table-bordered">
+    <% if (caption) { %>
+    <caption><%- caption %></caption>
+    <% } %>
+    <thead>
+        <tr>
+            <% _.each(fields, function(field) { %>
+            <td><%- field %></td>
+            <% }) %>
+        </tr>
+    </thead>
+    <tbody>
+        <% collection.each(function(model) { %>
+        <tr>
+            <% _.each(fields, function(field) { %>
+            <td><%- model.get(field) %></td>
+            <% }) %>
+        </tr>
+        <% }) %>
+    </tbody>
+</table>

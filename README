@@ -12,3 +12,5 @@
 Notes:
 Your server.js is getting a bit crufty: consider using backbone-relational, as well as 
 pushing the geocoding logic to the REST endpoint
+
+- you probably need a Bottle model and move the price to it as well...

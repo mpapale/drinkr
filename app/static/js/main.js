@@ -21,20 +21,13 @@ require(
         'jquery',
         'underscore',
         'backbone',
-        'views/App',
-
-        // "Because he's the hero Gotham deserves, but not the one it needs right now.
-        //  So we'll hunt him, because he can take it. Because he's not the hero.
-        //  He's a silent guardian, watchful protector.The Dark Knight."
-        'bootstrap'
+        'views/App'
     ], 
     function(
         $,
         _,
         Backbone,
         AppView
-
-        // Silent guardian
     ) {
         var appView = new AppView();
         appView.render().$el.appendTo($('#main'));

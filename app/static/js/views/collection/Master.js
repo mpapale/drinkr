@@ -6,7 +6,10 @@ define(
         'views/Base',
         'views/shared/List',
         'views/shared/PieChart',
-        'text!./Master.html'
+        'views/shared/Table',
+        'text!./Master.html',
+        // The Dark Knights
+        'bootstrap'
     ],
     function(
         $,
@@ -15,37 +18,54 @@ define(
         BaseView,
         ListView,
         PieChartView,
+        TableView,
         Template
     ) {
         return BaseView.extend({
             initialize: function() {
                 BaseView.prototype.initialize.apply(this, arguments);
+                this.model.state = this.model.state || new Backbone.Model();
+
+                this.model.state.set({
+                    currentCollection: this.collection.at(0)
+                });
+
                 this.buildChildren();
+
                 this.listenTo(this.collection, 'add reset remove sync', this.onCollectionChange);
+                this.listenTo(this.model.state, 'change:currentCollection', this.onCollectionChange);
             },
+            events: $.extend(BaseView.events, {
+                'click .drinkr-collection-content .btn-add': function(e) {
+                    this.$('.drinkr-modal-collection-add').modal();
+                },
+                'click .drinkr-collection-content .btn-create': function(e) {
+                    // TBI
+                },
+                'change .drinkr-collection-chooser-row select': function(e) {
+                    var id = $(e.target).val();
+
+                    this.model.state.set(
+                        currentCollection,
+                        this.collection.get(id)
+                    );
+                },
+                'click .drinkr-modal-collection-add .btn-save-new-bottles': function(e) {
+                    
+                }
+            }),
             buildChildren: function() {
+                var currentCollection = this.model.state.get('currentCollection');
+
                 _.each(_.values(this.children), function(child) {
                     child.remove();
                 }, this);
                 this.children = {};
 
-                this.collection.each(function(collection) {
-                    // this.children[_.uniqueId()] = new ListView({
-                    //     title: collection.get('name'),
-                    //     collection: new Backbone.Collection(
-                    //         collection.get('bottles').map(function(bottle) {
-                    //             return new Backbone.Model({
-                    //                 name: bottle.quantity + 'x ' + bottle.volume + 'ml ' + bottle.wine.name,
-                    //                 wine: bottle.wine,
-                    //                 quantity: bottle.quantity,
-                    //                 volume: bottle.volume 
-                    //             });
-                    //         }, this)
-                    //     )
-                    // });
+                if (!_.isUndefined(currentCollection)) {
                     this.children[_.uniqueId()] = new PieChartView({
                         title: 'Countries',
-                        className: 'col-md-3',
+                        className: 'col-md-4',
                         'chartjs.tooltipFontSize': 12,
                         modelAttribute: function(model) {
                             var ret = {};
@@ -53,14 +73,14 @@ define(
                             return ret;
                         },
                         collection: new Backbone.Collection(
-                            collection.get('bottles').map(function(bottle) {
+                            currentCollection.get('bottles').map(function(bottle) {
                                 return new Backbone.Model(bottle.wine);
                             })
                         )
                     });
                     this.children[_.uniqueId()] = new PieChartView({
                         title: "Price breakdown",
-                        className: 'col-md-3',
+                        className: 'col-md-4',
                         'chartjs.tooltipFontSize': 12,
                         modelAttribute: function(model) {
                             var ret = {};
@@ -72,7 +92,7 @@ define(
                             return '$' + price.toFixed(2);
                         },
                         collection: new Backbone.Collection(
-                            collection.get('bottles').map(function(bottle) {
+                            currentCollection.get('bottles').map(function(bottle) {
                                 return new Backbone.Model(
                                     $.extend(bottle, { wine: bottle.wine} )
                                 );
@@ -80,52 +100,12 @@ define(
                         )
                     });
                     this.children[_.uniqueId()] = new PieChartView({
-                        title: "Grape varieties - bottle agnostic",
-                        className: 'col-md-3',
-                        'chartjs.tooltipFontSize': 12,
-                        'chartjs.tooltipTemplate': "<%if (label){%><%=label%>: <%}%><%= value*100 %>%",
-                        modelAttribute: function(model) {
-                            var varieties = model.get('grapeVarieties');
-                            var ret = {};
-
-                            _.each(varieties, function(variety) {
-                                var percentage;
-                                if (variety.percentage === -1) {
-                                    percentage = 100 / varieties.length;
-                                } else {
-                                    percentage = variety.percentage || 100;
-                                }
-                                if (_.has(ret, variety.species)) {
-                                    ret[variety.species] += percentage;
-                                } else {
-                                    ret[variety.species] = percentage;
-                                }
-                            }, this);
-                            return ret;
-                        },
-                        normalize: true,
-                        collection: new Backbone.Collection(
-                            collection.get('bottles').map(function(bottle) {
-                                return new Backbone.Model(bottle.wine);
-                            })
-                        )
-                    });
-                    this.children[_.uniqueId()] = new PieChartView({
-                        title: "Grape varieties - per bottle",
-                        className: 'col-md-3',
+                        title: "Grape varieties",
+                        className: 'col-md-4',
                         'chartjs.tooltipFontSize': 12,
                         modelAttribute: function(model) {
                             var varieties = model.get('grapeVarieties');
                             var ret = {};
-                            // Option 1: show every grape
-                            // ret[
-                            //     _.map(varieties, function(v) {
-                            //         return v.species;
-                            //     })
-                            //     .sort()
-                            //     .join('+')
-                            // ] = 1;
-
                             // Option 2: show "blend" if not pure
                             if (varieties.length > 1) {
                                 ret['blend'] = 1;
@@ -135,22 +115,59 @@ define(
                             return ret;
                         },
                         collection: new Backbone.Collection(
-                            collection.get('bottles').map(function(bottle) {
+                            currentCollection.get('bottles').map(function(bottle) {
                                 return new Backbone.Model(bottle.wine);
                             })
                         )
                     });
-                }, this);
+                    
+                    this.children['_drinkr-table_' + _.uniqueId()] = new TableView({
+                        className: 'col-md-12',
+                        caption: 'The Collection',
+                        fields: ['quantity','name','producer','volume','vintage','alcohol','regionOrAppellation','country','varietiesList'],
+                        collection: new Backbone.Collection(
+                            currentCollection.get('bottles').map(function(bottle) {
+                                return new Backbone.Model(
+                                    $.extend(
+                                        bottle.wine, 
+                                        { 
+                                            quantity: bottle.quantity,
+                                            volume: bottle.volume,
+                                            varietiesList: _.pluck(bottle.wine.grapeVarieties, 'species').join(', ')
+                                        }
+                                    )
+                                );
+                            })
+                        )
+                    });
+                }
             },
             onCollectionChange: function() {
+                if (_.isUndefined(this.model.state.get('currentCollection'))) {
+                    this.model.state.set(
+                        'currentCollection', 
+                        this.collection.at(0), 
+                        { silent: true }
+                    );
+                }
                 this.buildChildren();
                 this.render();
             },
             render: function() {
-                this.$el.html(this.template);
-                _.each(_.values(this.children), function(child) {
-                    child.render().$el.appendTo(this.$('.drinkr-collection-content'));
+                this.$el.html(this.compiledTemplate({
+                    collections: this.collection
+                }));
+
+                _.each(_.pairs(this.children), function(pair) {
+                    var key = pair[0], child = pair[1];
+
+                    if (key.indexOf('_drinkr-table_') === 0) {
+                        child.render().$el.appendTo(this.$('.drinkr-collection-table-row'));
+                    } else {
+                        child.render().$el.appendTo(this.$('.drinkr-collection-chart-row'));
+                    }
                 }, this);
+
                 return this;
             },
             template: Template

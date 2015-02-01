@@ -26,3 +26,8 @@
     transform: rotate(30deg);
     margin-left: 2px;
 }
+
+/* Collection page */
+.drinkr-collection-no-data {
+    padding: 15px;
+}
