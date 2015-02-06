@@ -23,7 +23,6 @@ define(
                 BaseView.prototype.initialize.apply(this, arguments);
                 this.title = options.title || "List title";
                 this.modelAttribute = options.modelAttribute;
-                this.modelFormat = options.modelFormat || function(m) { return m; };
                 this.normalize = !!options.normalize;
 
                 this.chartjsOptions = {};
@@ -38,15 +37,10 @@ define(
             },
             remove: function() {
                 BaseView.prototype.remove.apply(this, arguments);
-                this.chart.destroy();
-                this.chart = null;
+                this.destroyChart();
             },
             render: function() {
-                if (this.chart) {
-                    this.chart.destroy();
-                    this.chart = null;
-                }
-
+                this.destroyChart();
                 this.$el.html(this.compiledTemplate({
                     title: this.title
                 }));
@@ -75,7 +69,7 @@ define(
                     var label = pair[0];
                     return {
                         value: +count.toFixed(2),
-                        label: this.modelFormat(label),
+                        label: label,
                         color: COLOR_PALETTE[colorIndex++ % COLOR_PALETTE.length]
                     };
                 }, this);
@@ -95,6 +89,12 @@ define(
                 //this.$('.drinkr-pie-legend').html(this.chart.generateLegend());
 
                 return this;
+            },
+            destroyChart: function() {
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+                this.chart = null;
             },
             template: Template
         });

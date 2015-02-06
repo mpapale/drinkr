@@ -3,17 +3,17 @@ define(
         'jquery',
         'underscore',
         'backbone',
-        'models/Inventory'
+        'models/Bottle'
     ],
     function(
         $,
         _,
         Backbone,
-        InventoryModel
+        BottleModel
     ) {
         return Backbone.Collection.extend({
-            url: '/api/inventories',
-            model: InventoryModel
+            url: '/api/bottles',
+            model: BottleModel
         });
     }
 );

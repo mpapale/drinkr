@@ -3,7 +3,7 @@ define(
         'jquery',
         'underscore',
         'backbone',
-        'collections/Inventories',
+        'collections/Bottles',
         'collections/Users',
         'collections/Wines',
         'collections/WineTastings',
@@ -19,7 +19,7 @@ define(
         $,
         _,
         Backbone,
-        InventoriesCollection,
+        BottlesCollection,
         UsersCollection,
         WinesCollection,
         WineTastingsCollection,
@@ -34,8 +34,9 @@ define(
         return BaseView.extend({
             initialize: function() {
                 BaseView.prototype.initialize.apply(this, arguments);
+                this.model.state = new Backbone.Model();
 
-                this.collection.inventories = new InventoriesCollection();
+                this.collection.bottles = new BottlesCollection();
                 this.collection.wines = new WinesCollection();
                 this.collection.wineTastings = new WineTastingsCollection();
                 this.collection.users = new UsersCollection();
@@ -43,11 +44,17 @@ define(
                 this.router = new AppRouter();
 
                 this.children.collection = new CollectionView({
-                    collection: this.collection.inventories
+                    model: {
+                        state: this.model.state
+                    },
+                    collection: {
+                        bottles: this.collection.bottles,
+                        wines: this.collection.wines
+                    }
                 });
                 this.children.admin = new AdminView({
                     collection: {
-                        inventories: this.collection.inventories,
+                        bottles: this.collection.bottles,
                         wines: this.collection.wines,
                         wineTastings: this.collection.wineTastings,
                         users: this.collection.users
@@ -60,6 +67,8 @@ define(
 
                 this.setupRoutes();
                 this.fetchCollections();
+
+                this.listenTo(this.model.state, 'change:currentUser', this.updateUser);
             },
             render: function() {
                 this.$el.html(this.template);
@@ -73,10 +82,15 @@ define(
                 return this;
             },
             fetchCollections: function() {
-                this.collection.inventories.fetch();
+                this.collection.bottles.fetch();
                 this.collection.wines.fetch();
                 this.collection.wineTastings.fetch();
-                this.collection.users.fetch();
+                this.collection.users.fetch().done(function() {
+                    // Glossing over login for now
+                    if (_.isUndefined(this.model.state.get('currentUser'))) {
+                        this.model.state.set('currentUser', this.collection.users.at(0));
+                    }
+                }.bind(this));
             },
             clearNavState: function() {
                 _.each(_.keys(this.children), function(childKey) {
@@ -109,6 +123,11 @@ define(
                 this.$('.drinkr-app-nav a[href="#' + route + '"]')
                     .parent()
                     .addClass('active');
+            },
+            updateUser: function() {
+                this.$('.drinkr-user-name').text(
+                    this.model.state.get('currentUser').get('name')
+                );
             },
             template: Template
         });

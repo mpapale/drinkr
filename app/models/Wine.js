@@ -11,7 +11,6 @@ var WineSchema = new Schema({
 	grapeVarieties: [ { species: String, percentage: { type: Number, min: -1, max: 100 , default: -1 } }],
 	vintage: Number,
 	alcohol: { type: Number, min: 0, max: 100 },
-	price: { type: Number, min: 0},
 
     // This currently gets populated on every GET request by google
     country: String,

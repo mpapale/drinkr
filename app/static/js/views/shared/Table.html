@@ -6,15 +6,15 @@
     <thead>
         <tr>
             <% _.each(fields, function(field) { %>
-            <td><%- field %></td>
+            <td><%- _.last(field.split('.')) %></td>
             <% }) %>
         </tr>
     </thead>
     <tbody>
-        <% collection.each(function(model) { %>
+        <% rows.each(function(model) { %>
         <tr>
             <% _.each(fields, function(field) { %>
-            <td><%- model.get(field) %></td>
+            <td><%- _.isFunction(formatters[field]) ? formatters[field](model.getNested(field)) : model.getNested(field) %></td>
             <% }) %>
         </tr>
         <% }) %>

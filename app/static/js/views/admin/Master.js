@@ -19,9 +19,9 @@ define(
             initialize: function() {
                 BaseView.prototype.initialize.apply(this, arguments);
 
-                this.children.inventoriesList = new ListView({
-                    collection: this.collection.inventories,
-                    title: 'Inventories'
+                this.children.bottlesList = new ListView({
+                    collection: this.collection.bottles,
+                    title: 'Bottles'
                 });
                 this.children.winesList = new ListView({
                     collection: this.collection.wines,
@@ -38,7 +38,7 @@ define(
             },
             render: function() {
                 this.$el.html(this.template);
-                this.children.inventoriesList.render().$el.appendTo(this.$('.drinkr-admin-content'));
+                this.children.bottlesList.render().$el.appendTo(this.$('.drinkr-admin-content'));
                 this.children.winesList.render().$el.appendTo(this.$('.drinkr-admin-content'));
                 this.children.tastingsList.render().$el.appendTo(this.$('.drinkr-admin-content'));
                 this.children.usersList.render().$el.appendTo(this.$('.drinkr-admin-content'));

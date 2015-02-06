@@ -5,7 +5,7 @@ var request = require('request');
 var _ = require('underscore');
 
 var WineModel = require('./app/models/Wine');
-var InventoryModel = require('./app/models/Inventory');
+var BottleModel = require('./app/models/Bottle');
 var UserModel = require('./app/models/User');
 var WineTastingModel = require('./app/models/WineTasting');
 var CacheModel = require('./app/models/Cache');
@@ -47,21 +47,28 @@ restRouter.get('/', function(req, res) {
 var serializeWine = function(wine, req) {
 	wine.name = req.body.name;
 	wine.producer = req.body.producer;
+	wine.description = req.body.description;
+	wine.picture = req.body.picture;
 	wine.regionOrAppellation = req.body.regionOrAppellation;
-	// What is the best way to do this? What does backbone do?
-	wine.grapeVarieties = JSON.parse(req.body.grapeVarieties);
+	wine.grapeVarieties = req.body.grapeVarieties;
 	wine.vintage = +req.body.vintage;
 	wine.alcohol = +req.body.alcohol;
-	wine.price = +req.body.price;
+	wine.notes = req.body.notes;
 };
-var serializeInventory = function(inventory, req) {
-	inventory.name = req.body.name;
-	inventory.location = req.body.location;
-	inventory.owners = JSON.parse(req.body.owners);
-	inventory.bottles = JSON.parse(req.body.bottles);
+var serializeBottle = function(bottle, req) {
+	console.dir(req.body)
+	bottle.picture = req.body.picture;
+	bottle.description = req.body.description;
+	bottle.owners = req.body.owners;
+	bottle.wine = req.body.wine;
+	bottle.volume = +req.body.volume;
+	bottle.price = +req.body.price;
+	bottle.notes = req.body.notes;
 };
 var serializeUser = function(user, req) {
 	user.name = req.body.name;
+	user.picture = req.body.picture;
+	user.notes = req.body.notes;
 };
 var serializeWineTasting = function(wineTasting, req) {
 	var body = req.body;
@@ -69,14 +76,15 @@ var serializeWineTasting = function(wineTasting, req) {
 	wineTasting.wine = body.wine;
 	wineTasting.date = Date.parse(body.date);
 	wineTasting.location = body.location;
-	wineTasting.tastingPartners = JSON.parse(body.tastingPartners);
+	wineTasting.tastingPartners = body.tastingPartners;
+	wineTasting.picture = body.picture;
 	wineTasting.color = body.color;
 	wineTasting.colorDepth = body.colorDepth;
 	wineTasting.colorHue = body.colorHue;
 	wineTasting.clarity = body.clarity;
 	wineTasting.aromaIntensity = body.aromaIntensity;
 	wineTasting.development = body.development;
-	wineTasting.aromas = JSON.parse(body.aromas);
+	wineTasting.aromas = body.aromas;
 	wineTasting.sweetness = body.sweetness;
 	wineTasting.body = body.body;
 	wineTasting.acidity = body.acidity;
@@ -85,20 +93,46 @@ var serializeWineTasting = function(wineTasting, req) {
 	wineTasting.balance = body.balance;
 	wineTasting.excess = body.excess;
 	wineTasting.flavorIntensity = body.flavorIntensity;
-	wineTasting.flavors = JSON.parse(body.flavors);
+	wineTasting.flavors = body.flavors;
 	wineTasting.finish = body.finish;
 	wineTasting.conclusion = body.conclusion;
 	wineTasting.style = body.style;
 	wineTasting.rating = +body.rating;
 	wineTasting.food = body.food || '';
 	wineTasting.foodPairingMatch = body.foodPairingMatch || '';
-	wineTasting.sideNotes = body.sideNotes || '';
+	wineTasting.notes = body.notes || '';
 };
 
 
 
 // TODO augmenter and populateFields should be enabled on entity GET as well
 var makeRestRoutes = function(root, Model, serializer, populateField, augmenter) {
+	var massagePopulateField = function() {
+		return _.isArray(populateField) ? populateField : [populateField];
+	};
+	var populateQuery = function(query) {
+		if (populateField) {
+			var popField = massagePopulateField();
+			_.each(popField, function(field) {
+				query = query.populate(field);
+			});
+		}
+		return query;
+	};
+	var populateModel = function(model, cb) {
+		if (populateField) {
+			var popField = massagePopulateField();
+			Model.populate(
+				model, 
+				_.map(popField, function(f) {
+					return { path: f };
+				}),
+				cb
+			);
+		} else {
+			cb(null, model);
+		}
+	};
 
 	// Wire up the entities
 	// The List endpoint
@@ -107,22 +141,36 @@ var makeRestRoutes = function(root, Model, serializer, populateField, augmenter)
 		.post(function(req, res) {
 			var model = new Model();
 			serializer(model, req);
-			model.save(function(err) {
+			model.save(function(err, model) {
 				if (err) {
-					res.send(err);
-					res.status(500).end();
+					res.status(500).send(err).end();
 				}
-				res.status(201);
-				res.json(model);
+				populateModel(model, function(err, model) {
+					if (err) {
+						res.send(err);
+						res.status(500).end();
+					}
+
+					if (augmenter) {
+						augmenter([model], function(err) {
+							if (err) {
+								res.status(500).send(err).end();
+							}
+							res.status(201);
+							res.json(model);
+						});
+					} else {
+						res.status(201);
+						res.json(model);
+					}
+				});
 			});
 		})
 		//_R_ead
 		.get(function(req, res) {
-			var models = Model.find();
-			if (populateField) {
-				models = models.populate(populateField);
-			}
-			models.exec(function(err, models) {
+			var query = Model.find();
+			query = populateQuery(query);
+			query.exec(function(err, models) {
 				if (err) {
 					res.send(err);
 					res.status(500).end();
@@ -171,11 +219,13 @@ var makeRestRoutes = function(root, Model, serializer, populateField, augmenter)
 	restRouter.route('/' + root + '/:id')
 		// Read
 		.get(function(req, res) {
-			Model.findById(req.params.id, function(err, model) {
+			var query = Model.findById(req.params.id);
+			populateQuery(query);
+			query.exec(function(err, model) {
 				if (validate(err, res, model)) {
 					res.json(model);
 				}
-			})
+			});
 		})
 		// Update (full only)
 		.put(function(req, res) {
@@ -184,11 +234,19 @@ var makeRestRoutes = function(root, Model, serializer, populateField, augmenter)
 
 					serializer(model, req);
 
-					model.save(function(err) {
+					model.save(function(err, model) {
 						if (err) {
 							res.send(err);
+							res.status(500).end();
 						}
-						res.json(model);
+						populateModel(model, function(err, model) {
+							if (err) {
+								res.send(err);
+								res.status(500).end();
+							}
+							res.status(201);
+							res.json(model);
+						});
 					});
 				}
 			})
@@ -254,11 +312,11 @@ var retrieveAddress = function(cache, address, cb) {
 
 makeRestRoutes('wines', WineModel, serializeWine);
 makeRestRoutes(
-	'inventories', 
-	InventoryModel, 
-	serializeInventory, 
-	'bottles.wine',
-	function(inventoryModels, cb) {
+	'bottles', 
+	BottleModel, 
+	serializeBottle, 
+	['wine','owners'],
+	function(bottleModels, cb) {
 		var cacheName = "addressCache";
 		CacheModel.findOne({ 'name': cacheName }, 'cache', function(err, cache) {
 			if (err) {
@@ -271,28 +329,35 @@ makeRestRoutes(
 				cache.cache = {};
 			}
 
-			var bottles = _.flatten(_.pluck(inventoryModels, 'bottles'));
-			var countdown = bottles.length;
+			var countdown = bottleModels.length;
+			if (countdown === 0) {
+				cb(null);
+			} else {
+				_.each(bottleModels, function(bottle) {
+					retrieveAddress(
+						cache,
+						bottle.wine.regionOrAppellation,
+						function(err, country) {
+							bottle.wine.country = country;
 
-			_.each(bottles, function(bottle) {
-				retrieveAddress(
-					cache,
-					bottle.wine.regionOrAppellation,
-					function(err, country) {
-						bottle.wine.country = country;
-
-						if (--countdown === 0) {
-							cache.save();
-							cb(null);
+							if (--countdown === 0) {
+								cache.save();
+								cb(null);
+							}
 						}
-					}
-				);
-			});
+					);
+				});
+			}
 		});
 	}
 );
 makeRestRoutes('users', UserModel, serializeUser);
-makeRestRoutes('wine-tastings', WineTastingModel, serializeWineTasting);
+makeRestRoutes(
+	'wine-tastings', 
+	WineTastingModel, 
+	serializeWineTasting,
+	['wine', 'taster', 'tastingPartners']
+);
 
 
 var viewsRouter = express.Router();
