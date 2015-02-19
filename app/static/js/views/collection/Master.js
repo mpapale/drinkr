@@ -6,6 +6,7 @@ define(
         'models/Wine',
         'models/Bottle',
         'views/Base',
+        'views/shared/Map',
         'views/shared/List',
         'views/shared/PieChart',
         'views/shared/Table',
@@ -20,6 +21,7 @@ define(
         WineModel,
         BottleModel,
         BaseView,
+        MapView,
         ListView,
         PieChartView,
         TableView,
@@ -61,7 +63,7 @@ define(
                         if (varieties.length > 1) {
                             ret['blend'] = 1;
                         } else {
-                            ret[varieties[0].species] = 1;
+                            ret[varieties[0].species || 'unknown'] = 1;
                         }
                         return ret;
                     },
@@ -99,7 +101,7 @@ define(
                         'wine.grapeVarieties': function(grapeVarieties) {
                             return _.map(grapeVarieties, function(v) {
                                 return v.species;
-                            }).join(', ');
+                            }).join(', ') || 'unknown';
                         },
                         price: function(price) {
                             return '$' + price.toFixed(2);
@@ -113,7 +115,21 @@ define(
                     }
                 });
 
-                this.listenTo(this.collection.bottles, 'add reset remove sync', this.render);
+                this.children.map = new MapView({
+                    collection: {
+                        geoItems: this.collection.bottles
+                    },
+                    getLatLng: function(bottle) {
+                        return [bottle.getNested('wine.lat'), bottle.getNested('wine.lng')];
+                    },
+                    getDisplayName: function(bottle) {
+                        return bottle.getNested('wine.name') + 
+                            ' by ' + 
+                            bottle.getNested('wine.producer');
+                    }
+                });
+
+                this.listenTo(this.collection.bottles, 'add reset remove sync', this.debouncedRender);
                 this.listenTo(this.model.state, 'change:currentUser', this.renderCurrentUser);
             },
             events: $.extend(BaseView.events, {
@@ -194,19 +210,23 @@ define(
             }),
             render: function() {
                 var $tableRow,
-                    $chartRow;
+                    $chartRow,
+                    $mapRow;
 
                 this.$el.html(this.compiledTemplate());
                 this.renderCurrentUser();
 
                 $tableRow = this.$('.drinkr-collection-table-row');
                 $chartRow = this.$('.drinkr-collection-chart-row');
+                $mapRow = this.$('.drinkr-collection-map-row');
 
                 this.children.countryChart.render().$el.appendTo($chartRow);
                 this.children.priceChart.render().$el.appendTo($chartRow);
                 this.children.grapeChart.render().$el.appendTo($chartRow);
 
                 this.children.bottleTable.render().$el.appendTo($tableRow);
+
+                this.children.map.render().$el.appendTo($mapRow);
 
                 return this;
             },

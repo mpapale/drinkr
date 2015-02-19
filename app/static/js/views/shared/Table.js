@@ -26,20 +26,14 @@ define(
                 this._computeRows();
 
                 this.listenTo(this.collection.items, 'add reset remove sync', this._computeRows);
-                this.listenTo(this.collection.rows, 'add reset remove', this.render);
+                this.listenTo(this.collection.rows, 'add reset remove', this.debouncedRender);
             },
             _computeRows: function() {
                 var groups,
                     rows;
 
                 if (_.isUndefined(this.groupBy)) {
-                    this.collection.rows.reset(
-                        this.collection.items.map(function(item) {
-                            item = item.clone();
-                            item.set('quantity', 0);
-                            return item;
-                        }, this)
-                    );
+                    this.collection.rows.reset(this.collection.items.models);
                 } else {
                     groups = this.collection.items.groupBy(function(item) {
                         return _.reduce(
@@ -74,23 +68,19 @@ define(
                 }
             },
             render: function() {
+                var fields = this.fields;
+
+                if (this.groupBy) {
+                    fields = ['quantity'].concat(fields);
+                }
+
                 this.$el.html(this.compiledTemplate({
                     caption: this.caption,
-                    fields: ['quantity'].concat(this.fields),
+                    fields: fields,
                     formatters: this.formatters,
                     rows: this.collection.rows
                 }));
                 return this;
-            },
-            _format: function(model) {
-                _.each(_.pairs(this.formatters), function(pair) {
-                    var key = pair[0], formatter = pair[1];
-
-                    model.set(
-                        key,
-                        formatter(model.getNested(key))
-                    );
-                });
             },
             template: Template
         });

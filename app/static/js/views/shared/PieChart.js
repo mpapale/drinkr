@@ -33,7 +33,7 @@ define(
                     }
                 }, this);
 
-                this.listenTo(this.collection, 'add reset remove sync', this.render);
+                this.listenTo(this.collection, 'add reset remove sync', this.debouncedRender);
             },
             remove: function() {
                 BaseView.prototype.remove.apply(this, arguments);

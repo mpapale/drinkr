@@ -18,13 +18,17 @@ define(
             initialize: function(options) {
                 BaseView.prototype.initialize.apply(this, arguments);
                 this.title = options.title || "List title";
+                this.displayName = options.displayName || function(model) {
+                    return model.get('name') || model.get('_id');
+                }
 
-                this.listenTo(this.collection, 'add reset remove sync', this.render);
+                this.listenTo(this.collection, 'add reset remove sync', this.debouncedRender);
             },
             render: function() {
                 this.$el.html(this.compiledTemplate({
                     title: this.title,
-                    items: this.collection
+                    items: this.collection,
+                    displayName: this.displayName
                 }));
                 return this;
             },

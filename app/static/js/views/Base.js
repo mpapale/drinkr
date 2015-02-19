@@ -21,6 +21,10 @@ define(
                 if (this.template) {
                     this.compiledTemplate = _.template(this.template);
                 }
+
+                if (this.render) {
+                    this.debouncedRender = _.debounce(this.render);
+                }
             }
         });
     }

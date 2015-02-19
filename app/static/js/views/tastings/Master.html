@@ -1,4 +1,273 @@
 <header class="container">
     <h2><span class="glyphicon glyphicon-glass" aria-hidden="true"></span> Tastings</h2>
-    <div class="drinkr-tastings-content"></div>
 </header>
+<div class="container">
+    <button class="btn btn-primary btn-add"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+    <div class="drinkr-tastings-content"></div>
+</div>
+
+<div class="modal fade drinkr-modal-tastings-add" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Let's taste</h4>
+      </div>
+      <div class="modal-body">
+        <div class="panel-body">
+          <div class="panel-group drinkr-accordion" role="tablist" aria-multiselectable="true">
+
+            <form class="drinkr-form-add-tasting">
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab">
+                  <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent=".drinkr-modal-tastings-add .drinkr-accordion" href=".drinkr-collapse-background">
+                      Background
+                    </a>
+                  </h4>
+                </div>
+                <div class="panel-collapse collapse in drinkr-collapse-background" role="tabpanel">
+                  <div class="panel-body">
+                    
+                    <div class="input-group">
+                        tasting date: <input type="date" value="<%- date %>" name="date"></input>
+                    </div>
+                    <div class="input-group">
+                      location: <input type="text" name="location"></input>
+                    </div>
+                    <div class="input-group">
+                        Tasting partners: <select multiple="multiple" name="tastingPartners">
+                        <% users.each(function(user) { %>
+                            <option value="<%- user.get('_id') %>"><%- user.get('name') %> </option>
+                        <% }) %>
+                    </select>
+                    <div class="input-group">
+                        Wine: <select name="wine">
+                        <% wines.each(function(wine) { %>
+                            <option value="<%- wine.get('_id') %>"><%- wine.get('name') + ' by ' + wine.get('producer') %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab">
+                  <h4 class="panel-title">
+                    <a class="collapsed" data-toggle="collapse" data-parent=".drinkr-modal-tastings-add .drinkr-accordion" href=".drinkr-collapse-look">
+                      Look
+                    </a>
+                  </h4>
+                </div>
+                <div class="panel-collapse collapse drinkr-collapse-look" role="tabpanel">
+                  <div class="panel-body">
+                    
+                    <div class="input-group">
+                        COLOR DEPTH: <select name="colorDepth">
+                        <% _.each(colorDepths, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        COLOR HUE: <select name="colorHue">
+                        <% _.each(_.pairs(colorHues), function(pair) { 
+                            var colorType = pair[0], options = pair[1];
+                        %>
+                            <optgroup label="<%- colorType %>">
+                            <% _.each(options, function(option) { %>
+                                <option value="<%- option %>"><%- option %></option>
+                            <% }) %>
+                            </optgroup>
+                        <% }) %>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        CLARITY: <select name="clarity">
+                        <% _.each(clarities, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab">
+                  <h4 class="panel-title">
+                    <a class="collapsed" data-toggle="collapse" data-parent=".drinkr-modal-tastings-add .drinkr-accordion" href=".drinkr-collapse-smell">
+                      Smell
+                    </a>
+                  </h4>
+                </div>
+                <div class="panel-collapse collapse drinkr-collapse-smell" role="tabpanel">
+                  <div class="panel-body">
+                   
+                   <div class="input-group">
+                        AROMA INTENSITY: <select name="aromaIntensity">
+                        <% _.each(aromaIntensities, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        DEVELOPMENT: <select name="development">
+                        <% _.each(developments, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="aromas" name="aromas"></input>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab">
+                  <h4 class="panel-title">
+                    <a class="collapsed" data-toggle="collapse" data-parent=".drinkr-modal-tastings-add .drinkr-accordion" href=".drinkr-collapse-taste">
+                      Taste
+                    </a>
+                  </h4>
+                </div>
+                <div class="panel-collapse collapse drinkr-collapse-taste" role="tabpanel">
+                  <div class="panel-body">
+
+                    <div class="input-group">
+                        DRY/SWEET: <select name="sweetness">
+                        <% _.each(sweetnesses, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        BODY: <select name="body">
+                        <% _.each(bodies, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        ACIDITY: <select name="acidity">
+                        <% _.each(acidities, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        TANNINS <small>(IF PRESENT)</small>: 
+                        <small>LEVEL:</small> <select name="tanninLevel">
+                        <% _.each(tanninLevels, function(option) { %>
+                            <option value="<%- option %>"><%- option || 'n/a' %></option>
+                        <% }) %>
+                        </select>
+                        <small> TYPE:</small> <select name="tanninType">
+                        <% _.each(tanninTypes, function(option) { %>
+                            <option value="<%- option %>"><%- option || 'n/a' %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        BALANCE: <select name="balance">
+                        <% _.each(balances, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                        <small> (excess <select name="excess">
+                        <% _.each(excesses, function(option) { %>
+                            <option value="<%- option %>"><%- option || 'n/a' %></option>
+                        <% }) %>
+                        </select>
+                        )</small>
+                    </div>
+
+                    <div class="input-group">
+                        FLAVOR INTENSITY: <select name="flavorIntensity">
+                        <% _.each(flavorIntensities, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="flavors" name="flavors"></input>
+                    </div>
+
+                    <div class="input-group">
+                        FINISH: <select name="finish">
+                        <% _.each(finishes, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab">
+                  <h4 class="panel-title">
+                    <a class="collapsed" data-toggle="collapse" data-parent=".drinkr-modal-tastings-add .drinkr-accordion" href=".drinkr-collapse-conclusion">
+                      Conclusion
+                    </a>
+                  </h4>
+                </div>
+                <div class="panel-collapse collapse drinkr-collapse-conclusion" role="tabpanel">
+                  <div class="panel-body">
+                    
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="conclusion" name="conclusion"></input>
+                    </div>
+
+                    <div class="input-group">
+                        STYLES: <select name="styles">
+                        <% _.each(styles, function(option) { %>
+                            <option value="<%- option %>"><%- option %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                      RATING: <div class="drinkr-rating-value">3</div> <input type="range" min="0" max="5" step="0.5" value="3" class="form-control" name="rating"></input> 
+                    </div>
+
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="food" name="food"></input>
+                    </div>
+
+                    <div class="input-group">
+                        FOOD PAIRING MATCH: <select name="foodPairingMatch">
+                        <% _.each(foodPairingMatches, function(option) { %>
+                            <option value="<%- option %>"><%- option || 'n/a' %></option>
+                        <% }) %>
+                        </select>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+              <input type="checkbox" name="deduct"></input> Deduct from collection
+             </form>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary btn-save-new-tasting">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -12,8 +12,10 @@ var WineSchema = new Schema({
 	vintage: Number,
 	alcohol: { type: Number, min: 0, max: 100 },
 
-    // This currently gets populated on every GET request by google
+    // These currently gets populated on every GET request by google
     country: String,
+    lat: Number,
+    lng: Number,
 
     notes: { type: String, default: '' }
 });

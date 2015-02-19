@@ -6,7 +6,7 @@
     <thead>
         <tr>
             <% _.each(fields, function(field) { %>
-            <td><%- _.last(field.split('.')) %></td>
+            <td><%- _.isObject(field) ? field.label : _.last(field.split('.')) %></td>
             <% }) %>
         </tr>
     </thead>
@@ -14,6 +14,7 @@
         <% rows.each(function(model) { %>
         <tr>
             <% _.each(fields, function(field) { %>
+            <% if (_.isObject(field)) { field = field.key; } %>
             <td><%- _.isFunction(formatters[field]) ? formatters[field](model.getNested(field)) : model.getNested(field) %></td>
             <% }) %>
         </tr>

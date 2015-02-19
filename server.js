@@ -74,7 +74,7 @@ var serializeWineTasting = function(wineTasting, req) {
 	var body = req.body;
 	wineTasting.taster = body.taster;
 	wineTasting.wine = body.wine;
-	wineTasting.date = Date.parse(body.date);
+	wineTasting.date = _.isString(body.date) ? Date.parse(body.date) : new Date(body.date);
 	wineTasting.location = body.location;
 	wineTasting.tastingPartners = body.tastingPartners;
 	wineTasting.picture = body.picture;
@@ -284,9 +284,13 @@ var retrieveAddress = function(cache, address, cb) {
 					return
 				}
 				var respObject = JSON.parse(body),
-					value = UNKNOWN_COUNTRY,
+					country = UNKNOWN_COUNTRY,
+					lat = -1,
+					lng = -1,
 					results = respObject.results[0],
 					addressData = (results && results.address_components) || [],
+					geometryData = (results && results.geometry) || {},
+					locationData = (geometryData && geometryData.location) || {},
 					countryData = _.find(addressData, function(datum) {
 						return _.contains(datum.types, 'country');
 					});
@@ -298,16 +302,62 @@ var retrieveAddress = function(cache, address, cb) {
 				}
 
 				if (countryData) {
-					value = countryData.long_name; 
+					country = countryData.long_name; 
+				}
+				if (locationData) {
+					lat = locationData.lat;
+					lng = locationData.lng;
 				}
 
-				cache.cache[address] = value;
+				cache.cache[address] = {
+					country: country,
+					lat: lat,
+					lng: lng
+				};
+
 				cache.markModified('cache');
 
-				cb(null, value);
+				cb(null, cache.cache[address]);
 			}
 		);
 	}
+};
+
+var cacheLookup = function(models, cb) {
+	var cacheName = "addressCache";
+	CacheModel.findOne({ 'name': cacheName }, 'cache', function(err, cache) {
+		if (err) {
+			cb(err);
+			return;
+		}
+		if (cache === null) {
+			cache = new CacheModel();
+			cache.name = cacheName;
+			cache.cache = {};
+		}
+
+		var countdown = models.length;
+		if (countdown === 0) {
+			cb(null);
+		} else {
+			_.each(models, function(model) {
+				retrieveAddress(
+					cache,
+					model.wine.regionOrAppellation,
+					function(err, addressCache) {
+						model.wine.country = addressCache.country;
+						model.wine.lat = addressCache.lat;
+						model.wine.lng = addressCache.lng;
+
+						if (--countdown === 0) {
+							cache.save();
+							cb(null);
+						}
+					}
+				);
+			});
+		}
+	});
 };
 
 makeRestRoutes('wines', WineModel, serializeWine);
@@ -316,47 +366,15 @@ makeRestRoutes(
 	BottleModel, 
 	serializeBottle, 
 	['wine','owners'],
-	function(bottleModels, cb) {
-		var cacheName = "addressCache";
-		CacheModel.findOne({ 'name': cacheName }, 'cache', function(err, cache) {
-			if (err) {
-				cb(err);
-				return;
-			}
-			if (cache === null) {
-				cache = new CacheModel();
-				cache.name = cacheName;
-				cache.cache = {};
-			}
-
-			var countdown = bottleModels.length;
-			if (countdown === 0) {
-				cb(null);
-			} else {
-				_.each(bottleModels, function(bottle) {
-					retrieveAddress(
-						cache,
-						bottle.wine.regionOrAppellation,
-						function(err, country) {
-							bottle.wine.country = country;
-
-							if (--countdown === 0) {
-								cache.save();
-								cb(null);
-							}
-						}
-					);
-				});
-			}
-		});
-	}
+	cacheLookup
 );
 makeRestRoutes('users', UserModel, serializeUser);
 makeRestRoutes(
 	'wine-tastings', 
 	WineTastingModel, 
 	serializeWineTasting,
-	['wine', 'taster', 'tastingPartners']
+	['wine', 'taster', 'tastingPartners'],
+	cacheLookup
 );
 
 

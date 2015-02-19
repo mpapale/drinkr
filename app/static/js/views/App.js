@@ -61,7 +61,15 @@ define(
                     }
                 });
                 this.children.tastings = new TastingsView({
-                    collection: this.collection.wineTastings
+                    model: {
+                        state: this.model.state
+                    },
+                    collection: {
+                        wineTastings: this.collection.wineTastings,
+                        users: this.collection.users,
+                        bottles: this.collection.bottles,
+                        wines: this.collection.wines
+                    }
                 });
                 this.children.home = new HomeView();
 

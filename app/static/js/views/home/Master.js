@@ -18,7 +18,7 @@ define(
                 BaseView.prototype.initialize.apply(this, arguments);
             },
             render: function() {
-                this.$el.html(this.template);
+                this.$el.html(this.compiledTemplate());
                 return this;
             },
             template: Template

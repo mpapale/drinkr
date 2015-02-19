@@ -12,7 +12,7 @@ define(
         WineTastingModel
     ) {
         return Backbone.Collection.extend({
-            url: '/api/wines',
+            url: '/api/wine-tastings',
             model: WineTastingModel            
         });
     }

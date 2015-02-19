@@ -6,7 +6,8 @@ require.config({
         'backbone': '/static/bower_components/backbone/backbone',
         'text': '/static/bower_components/requirejs-text/text',
         'bootstrap': '/static/bower_components/bootstrap/dist/js/bootstrap.min',
-        'chartjs': '/static/bower_components/chartjs/Chart.min'
+        'chartjs': '/static/bower_components/chartjs/Chart.min',
+        'leaflet': '/static/bower_components/leaflet/dist/leaflet'
     },
     shim: {
         'bootstrap': {

@@ -8,7 +8,7 @@
         <% } else { %>
         <ul class="list-group">
         <% items.each(function(item) { %>
-            <li class="list-group-item"><%- item.get('name') || item.get('_id') %></li>
+            <li class="list-group-item"><%- displayName(item) %></li>
         <% }) %>
         </ul>
         <% } %>
